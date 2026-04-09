@@ -25,7 +25,7 @@ export default defineConfig(({ command, mode }: ConfigEnv): UserConfig => {
     })
     ],
     publicDir: "public",
-    base: "./",
+    base: "/IofTV-Screen-Vue3/",
     server: {
       host: '0.0.0.0',
       port: 8112,
