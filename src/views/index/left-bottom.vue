@@ -9,98 +9,81 @@ import { ElMessage } from "element-plus";
 
 const settingStore = useSettingStore();
 const { defaultOption, indexConfig } = storeToRefs(settingStore);
+
 const state = reactive<any>({
   list: [],
   defaultOption: {
     ...defaultOption.value,
-    singleHeight: 256,
+    singleHeight: 80, // 增加高度以容纳更多内容
     limitScrollNum: 4,
+    step: 0.6,
   },
   scroll: true,
 });
 
 const getData = () => {
-  leftBottom( { limitNum: 20 })
+  leftBottom({ limitNum: 30 })
     .then((res) => {
-      console.log("左下--设备提醒", res);
       if (res.success) {
         state.list = res.data.list;
       } else {
-        ElMessage({
-          message: res.msg,
-          type: "warning",
-        });
+        ElMessage.warning(res.msg);
       }
     })
-    .catch((err) => {
-      ElMessage.error(err);
+    .catch(() => {
+      ElMessage.error("获取案例预警失败");
     });
 };
+
 const addressHandle = (item: any) => {
-  let name = item.provinceName;
-  if (item.cityName) {
-    name += "/" + item.cityName;
-    if (item.countyName) {
-      name += "/" + item.countyName;
-    }
-  }
-  return name;
+  return `${item.provinceName}`;
 };
+
 const comName = computed(() => {
-  if (indexConfig.value.leftBottomSwiper) {
-    return SeamlessScroll;
-  } else {
-    return EmptyCom;
-  }
+  return indexConfig.value.leftBottomSwiper ? SeamlessScroll : EmptyCom;
 });
+
 onMounted(() => {
   getData();
 });
 </script>
 
 <template>
-  <div class="left_boottom_wrap beautify-scroll-def" :class="{ 'overflow-y-auto': !indexConfig.leftBottomSwiper }">
-    <component
-      :is="comName"
-      :list="state.list"
-      v-model="state.scroll"
-      :singleHeight="state.defaultOption.singleHeight"
-      :step="state.defaultOption.step"
-      :limitScrollNum="state.defaultOption.limitScrollNum"
-      :hover="state.defaultOption.hover"
-      :singleWaitTime="state.defaultOption.singleWaitTime"
-      :wheel="state.defaultOption.wheel"
-    >
-      <ul class="left_boottom">
-        <li class="left_boottom_item" v-for="(item, i) in state.list" :key="i">
-          <span class="orderNum doudong">{{ i + 1 }}</span>
-          <div class="inner_right">
-            <div class="dibu"></div>
-            <div class="flex">
-              <div class="info">
-                <span class="labels">设备ID：</span>
-                <span class="text-content zhuyao doudong wangguan"> {{ item.gatewayno }}</span>
+  <div class="left_bottom_wrap">
+    <component :is="comName" :list="state.list" v-model="state.scroll" :singleHeight="state.defaultOption.singleHeight"
+      :step="state.defaultOption.step" :limitScrollNum="state.defaultOption.limitScrollNum"
+      :hover="state.defaultOption.hover" :wheel="state.defaultOption.wheel">
+      <ul class="left_bottom_list">
+        <li class="case_item" v-for="(item, i) in state.list" :key="i" :class="item.onlineState === 0 ? 'is_warn' : ''">
+          <div class="index_box">
+            <span class="num">{{ (i + 1).toString().padStart(2, '0') }}</span>
+            <div class="line"></div>
+          </div>
+
+          <div class="content_box">
+            <div class="row_top">
+              <div class="user_info">
+                <span class="id_text">{{ item.gatewayno }}</span>
+                <span class="tag_addr">{{ addressHandle(item) }}</span>
               </div>
-              <div class="info">
-                <span class="labels">时间：</span>
-                <span class="text-content" style="font-size: 12px"> {{ item.createTime }}</span>
+              <div class="time_text">{{ item.createTime }}</div>
+            </div>
+
+            <div class="row_mid">
+              <div class="reason_text">
+                <span class="dot"></span>
+                {{ item.reason || '检测到非理性消费倾向' }}
               </div>
             </div>
 
-            <span
-              class="types doudong"
-              :class="{
-                typeRed: item.onlineState == 0,
-                typeGreen: item.onlineState == 1,
-              }"
-              >{{ item.onlineState == 1 ? "上线" : "下线" }}</span
-            >
-
-            <div class="info addresswrap">
-              <span class="labels">地址：</span>
-              <span class="text-content ciyao" style="font-size: 12px"> {{ addressHandle(item) }}</span>
+            <div class="row_bottom">
+              <div class="status_badge" :class="item.onlineState === 0 ? 'bg_red' : 'bg_green'">
+                {{ item.onlineState === 0 ? "高危诱导" : "常规行为" }}
+              </div>
             </div>
           </div>
+
+          <div class="corner_deco"></div>
         </li>
       </ul>
     </component>
@@ -108,120 +91,146 @@ onMounted(() => {
 </template>
 
 <style scoped lang="scss">
-.left_boottom_wrap {
-  overflow: hidden;
+.left_bottom_wrap {
   width: 100%;
   height: 100%;
-}
-
-.doudong {
   overflow: hidden;
-  backface-visibility: hidden;
+  padding: 10px;
 }
 
-.overflow-y-auto {
-  overflow-y: auto;
-}
+.left_bottom_list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
 
-.left_boottom {
-  width: 100%;
-  height: 100%;
-
-  .left_boottom_item {
+  .case_item {
+    height: 70px; // 留 10px margin-bottom = 80px singleHeight
+    margin-bottom: 10px;
+    background: linear-gradient(90deg, rgba(24, 144, 255, 0.15) 0%, rgba(24, 144, 255, 0.02) 100%);
+    border: 1px solid rgba(24, 144, 255, 0.2);
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 8px;
-    font-size: 14px;
-    margin: 10px 0;
-    .orderNum {
-      margin: 0 16px 0 -20px;
-    }
+    position: relative;
+    transition: all 0.3s;
+    clip-path: polygon(0 0, 97% 0, 100% 30%, 100% 100%, 0 100%); // 科技感切角
 
-    .info {
-      margin-right: 10px;
-      display: flex;
-      align-items: center;
-      color: #fff;
+    &.is_warn {
+      background: linear-gradient(90deg, rgba(255, 77, 79, 0.15) 0%, rgba(255, 77, 79, 0.02) 100%);
+      border-color: rgba(255, 77, 79, 0.3);
 
-      .labels {
-        flex-shrink: 0;
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.6);
+      .index_box .num {
+        color: #ff4d4f;
       }
 
-      .zhuyao {
-        color: $primary-color;
-        font-size: 15px;
-      }
-
-      .ciyao {
-        color: rgba(255, 255, 255, 0.8);
-      }
-
-      .warning {
-        color: #e6a23c;
-        font-size: 15px;
+      .index_box .line {
+        background: #ff4d4f;
       }
     }
 
-    .inner_right {
-      position: relative;
-      height: 100%;
-      width: 380px;
-      flex-shrink: 0;
-      line-height: 1;
+    .index_box {
+      width: 40px;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      .dibu {
-        position: absolute;
+      justify-content: center;
+
+      .num {
+        font-family: 'Oswald';
+        font-size: 16px;
+        color: #1890ff;
+        font-weight: bold;
+      }
+
+      .line {
+        width: 12px;
         height: 2px;
-        width: 104%;
-        background-image: url("@/assets/img/zuo_xuxian.png");
-        bottom: -10px;
-        left: -2%;
-        background-size: cover;
+        background: #1890ff;
+        margin-top: 2px;
       }
-      .addresswrap {
-        width: 100%;
+    }
+
+    .content_box {
+      flex: 1;
+      padding-right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .row_top {
         display: flex;
-        margin-top: 8px;
+        justify-content: space-between;
+        align-items: center;
+
+        .id_text {
+          color: #fff;
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        .tag_addr {
+          color: rgba(255, 255, 255, 0.4);
+          font-size: 11px;
+          margin-left: 10px;
+          padding: 0 4px;
+          border-left: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .time_text {
+          color: rgba(255, 255, 255, 0.3);
+          font-size: 11px;
+          min-width: 85px; // 确保秒数显示完整
+          text-align: right;
+        }
+      }
+
+      .row_mid {
+        .reason_text {
+          color: #00e4ff;
+          font-size: 12px;
+          display: flex;
+          align-items: center;
+
+          .dot {
+            width: 4px;
+            height: 4px;
+            background: #00e4ff;
+            border-radius: 50%;
+            margin-right: 6px;
+            box-shadow: 0 0 5px #00e4ff;
+          }
+        }
+      }
+
+      .row_bottom {
+        .status_badge {
+          display: inline-block;
+          font-size: 10px;
+          padding: 0 6px;
+          border-radius: 2px;
+
+          &.bg_red {
+            background: rgba(255, 77, 79, 0.2);
+            color: #ff4d4f;
+            border: 1px solid #ff4d4f;
+          }
+
+          &.bg_green {
+            background: rgba(82, 196, 26, 0.2);
+            color: #52c41a;
+            border: 1px solid #52c41a;
+          }
+        }
       }
     }
 
-    .wangguan {
-      color: #1890ff;
-      font-weight: 900;
-      font-size: 15px;
-      width: 80px;
-      flex-shrink: 0;
-    }
-
-    .time {
-      font-size: 12px;
-      // color: rgba(211, 210, 210,.8);
-      color: #fff;
-    }
-
-    .address {
-      font-size: 12px;
-      cursor: pointer;
-      // @include text-overflow(1);
-    }
-
-    .types {
-      width: 30px;
-      flex-shrink: 0;
-    }
-
-    .typeRed {
-      color: #fc1a1a;
-    }
-
-    .typeGreen {
-      color: #29fc29;
+    .corner_deco {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 10px;
+      height: 10px;
+      background: rgba(24, 144, 255, 0.3);
+      clip-path: polygon(100% 0, 0 0, 100% 100%);
     }
   }
 }

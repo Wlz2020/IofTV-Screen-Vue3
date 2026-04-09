@@ -1,5 +1,4 @@
 import Mock from "mockjs";
-//处理路径传参
 import { parameteUrl } from "@/utils/query-param"
 
 function ArrSet(Arr: any[], id: string): any[] {
@@ -10,214 +9,335 @@ function ArrSet(Arr: any[], id: string): any[] {
     }, [])
     return arrays
 }
-/**
-* @description: min ≤ r ≤ max  随机数
-* @param {*} Min
-* @param {*} Max
-* @return {*}
-*/
-function RandomNumBoth(Min: any, Max: any) {
-    var Range = Max - Min;
-    var Rand = Math.random();
-    var num = Min + Math.round(Rand * Range); //四舍五入
-    return num;
-}
-//左中
+
 export default [
-    {
-        url: "/bigscreen/countUserNum",
-        type: "get",
-        response: () => {
-            const a = Mock.mock({
-                success: true,
-                data: {
-                    offlineNum: '@integer(50, 100)',
-                    alarmNum: '@integer(20, 100)',
-                    lockNum: '@integer(10, 50)',
-                    totalNum: 368
-                }
-            })
-            a.data.onlineNum = a.data.totalNum - a.data.offlineNum - a.data.lockNum - a.data.alarmNum
-            return a
-        },
-    },
+    // 左上--游戏成瘾干预样本监测 (LeftTop)
+    // 总样本 1420，分三类：
+    //   正常娱乐（轻度）= 698，约 49%，接近真实"大多数玩家无问题"
+    //   退款申诉        = 187，约 13%，参考国内投诉平台比例
+    //   成瘾预警        = 535，约 38%，青少年群体中诱导机制覆盖率偏高（符合研究立场）
+    //   三者之和 = 1420，严格等于 totalNum
     {
         url: "/bigscreen/countDeviceNum",
         type: "get",
         response: () => {
-            const a = Mock.mock({
+            return {
                 success: true,
+                msg: "查询成功",
                 data: {
-                    alarmNum: '@integer(100, 1000)',
-                    offlineNum: '@integer(0, 50)',
-                    totalNum: 698
+                    totalNum: 1420,
+                    onlineNum: 698,   // 正常娱乐（轻度玩家）
+                    offlineNum: 187,  // 已产生退款申诉
+                    alarmNum: 535     // 触发"成瘾预警"样本
                 }
-            })
-            a.data.onlineNum = a.data.totalNum - a.data.offlineNum
-            return a
+            }
         }
     },
-    //左下
+
+    // 左中--成瘾性消费阶层画像 (LeftCenter)
+    // 基于 onlineNum 698 中进一步分层（氪金行为分析）
+    // 实际调研中零氪占多数，重氪极少，符合"二八定律"
+    //   零氪/纯体验   = 312，约 45%
+    //   微氪（月卡）  = 224，约 32%
+    //   深度进阶      = 127，约 18%
+    //   极端重氪      = 35，约 5%（单月消费过万，参考腾讯防沉迷数据约 1-3%，此处因调研对象为高风险群体略高）
+    //   四者之和 = 698 = totalNum
+    {
+        url: "/bigscreen/countUserNum",
+        type: "get",
+        response: () => {
+            return {
+                success: true,
+                msg: "查询成功",
+                data: {
+                    totalNum: 698,
+                    onlineNum: 312,  // 零氪/纯体验玩家
+                    offlineNum: 224, // 微氪（月卡/首充）
+                    lockNum: 127,    // 深度进阶（全皮肤/全角色）
+                    alarmNum: 35     // 极端重氪（单月过万）
+                }
+            }
+        }
+    },
+
+    // 左下--高危诱导实时监测 (LeftBottom)
     {
         url: "/bigscreen/leftBottom",
         type: "get",
         response: () => {
-            const a = Mock.mock({
-                success: true,
-                data: {
-                    "list|20": [
-                        {
-                            provinceName: "@province()",
-                            cityName: '@city()',
-                            countyName: "@county()",
-                            createTime: "@datetime('yyyy-MM-dd HH:mm:ss')",
-                            deviceId: "6c512d754bbcd6d7cd86abce0e0cac58",
-                            "gatewayno|+1": 10000,
-                            "onlineState|1": [0, 1],
+            // 定义高危行为的关键词
+            const dangerReasons = [
+                "报复性氪金", "绕过家长", "博彩", "异常消费", "高额虚拟货币", "异常登录"
+            ];
 
+            return Mock.mock({
+                success: true,
+                msg: "查询成功",
+                data: {
+                    // 生成 20 条数据
+                    "list|20": [{
+                        "gatewayno": "ID-@integer(1000, 9999)",
+                        // 1. 随机生成过去 24 小时内的时间，包含秒
+                        "createTime": () => Mock.Random.datetime('MM-dd HH:mm:ss'),
+                        "provinceName": "@province()",
+                        // 2. 先随机选出一个理由
+                        "reason|+1": [
+                            "连续触发概率开箱保底机制",
+                            "深夜高额虚拟货币交易",
+                            "绕过家长防沉迷系统",
+                            "检测到报复性氪金行为",
+                            "极短时间内多次触发限时特惠",
+                            "角色战力受挫后异常消费",
+                            "疑似借用家长身份认证",
+                            "涉及概率博彩类小游戏",
+                            "为排行榜特权产生超预算消费",
+                            "常规登录环境检测",
+                            "系统日常健康提醒",
+                            "正常完成每日限时任务"
+                        ],
+                        // 3. 根据理由内容自动判断状态：包含高危词汇则为 0，否则为 1
+                        "onlineState": function () {
+                            const isDanger = dangerReasons.some(key => this.reason.includes(key));
+                            return isDanger ? 0 : 1;
                         }
-                    ]
+                    }]
                 }
             })
-            return a
         }
     },
-    //右上
+
+    // 右上--非理性付费波动轨迹 (RightTop)
+    // 修正：numList2（非理性氪金转化）约为 numList（诱导频次）的 20~35%
+    // 符合"曝光→兴趣→购买"漏斗模型的真实转化率
+    // 波峰在寒假（2月）和五一前后（4-5月），符合学生群体作息规律
     {
         url: "/bigscreen/alarmNum",
         type: "get",
         response: () => {
-            const a = Mock.mock({
+            return {
                 success: true,
+                msg: "查询成功",
                 data: {
-                    dateList: ['2021-11', '2021-12', '2022-01', '2022-02', '2022-03', "2022-04"],
-                    "numList|6": [
-                        '@integer(0, 1000)'
-                    ],
-                    "numList2|6": [
-                        '@integer(0, 1000)'
-                    ]
+                    dateList: ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'],
+                    numList: [520, 1240, 680, 890, 1380, 760],  // 诱导行为触发频次（寒假/五一双高峰）
+                    numList2: [118, 310, 172, 215, 345, 198]   // 转化为非理性氪金（转化率约 22~28%）
                 }
-            })
-            return a
+            }
         }
     },
-    //右中
+
+    // 右中--暗黑模式强度排行 (RightCenter)
+    // 排名逻辑：开箱/抽卡类最强（赌博属性最明显），体力锁定最弱（间接诱导）
+    // 数值之间保持合理梯度，不要出现相邻两项差距过小的情况
     {
         url: "/bigscreen/ranking",
         type: "get",
         response: () => {
-            let num = Mock.mock({ "list|80": [{ value: "@integer(50,1000)", name: "@city()" }] }).list
-            //   console.log("ranking",num);
-            let newNum: any = [], numObj: any = {}
-            num.map((item: any) => {
-                if (!numObj[item.name] && newNum.length < 8) {
-                    numObj[item.name] = true
-                    newNum.push(item)
-                }
-            })
-            let arr = newNum.sort((a: any, b: any) => {
-                return b.value - a.value
-            })
-            let a = {
+            const list = [
+                { name: "概率开箱(抽卡)", value: 982 },
+                { name: "保底机制诱导", value: 856 },
+                { name: "限时折扣弹窗", value: 724 },
+                { name: "首充双倍返利", value: 651 },
+                { name: "PVP数值攀比", value: 573 },
+                { name: "沉没成本(战令)", value: 468 },
+                { name: "节日限定盲盒", value: 372 },
+                { name: "体力/进度锁定", value: 289 },
+            ];
+            return {
                 success: true,
-                data: arr
+                msg: "查询成功",
+                data: list
             }
-            return a
         }
     },
-    //右下
+
+    // 右下--高频成瘾行为实时审计 (RightBottom)
+    // alertvalue 范围改为 60~960，覆盖低中高全区间
+    // 低风险样本（60-200）占多数，高风险（700+）是少数，符合正态分布逻辑
     {
         url: "/bigscreen/rightBottom",
         type: "get",
         response: () => {
-            const a = Mock.mock({
+            return Mock.mock({
                 success: true,
                 data: {
-                    "list|40": [{
-                        alertdetail: "@csentence(5,10)",
-                        "alertname|1": ["水浸告警", "各种报警"],
-                        alertvalue: "@float(60, 200)",
-                        createtime: "2022-04-19 08:38:33",
-                        deviceid: null,
-                        "gatewayno|+1": 10000,
-                        phase: "A1",
-                        sbInfo: "@csentence(10,18)",
-                        "terminalno|+1": 100,
-                        provinceName: "@province()",
-                        cityName: '@city()',
-                        countyName: "@county()",
-                    }],
-
+                    "list|200": [{
+                        "alertdetail|1": [
+                            "连续高频触发\"概率开箱\"保底机制",
+                            "凌晨 3:00 出现高额虚拟货币交易记录",
+                            "通过第三方代充绕过家长防沉迷系统",
+                            "检测到因\"攀比心理\"激发的报复性氪金",
+                            "极短时间内触发多次\"限时特惠\"心理暗示",
+                            "角色战力受挫后触发\"资源大礼包\"精准投喂",
+                            "疑似利用家长身份信息绕过人脸识别认证",
+                            "深夜活跃度异常，涉及概率博彩类小游戏",
+                            "为获取\"排行榜特权\"产生超预算消费"
+                        ],
+                        "gatewayno": "UID-@integer(100000, 999999)",
+                        "terminalno|1": ["移动端", "客户端"], // 移动端占比更高
+                        "provinceName": "@province()",
+                        "cityName": "@city()",
+                        "countyName": "@county()",
+                        "createtime": "@now('yyyy-MM-dd HH:mm:ss')",
+                        "alertvalue|1": [
+                            "@integer(60, 200)",   // 低风险，占 3/7
+                            "@integer(60, 200)",
+                            "@integer(60, 200)",
+                            "@integer(201, 500)",  // 中风险，占 2/7
+                            "@integer(201, 500)",
+                            "@integer(501, 720)",  // 高风险，占 1/7
+                            "@integer(721, 960)"   // 极高风险，占 1/7
+                        ]
+                    }]
                 }
             })
-            return a
         }
     },
-    //安装计划
+
+    // 中下--付费诱导机制曝光转化审计 (CenterBottom)
+    // 修正：lineData（曝光量）应整体均匀，不出现单点极端值（原来 800 过于突出）
+    // barData（转化人数）和 lineData 的比值即转化率，控制在 15%~65% 之间比较真实
+    // 高转化率的机制：首充礼包（诱惑力强）、限定池（稀缺性）
+    // 低转化率的机制：公会赞助（社交压力弱）、成长基金（决策周期长）
     {
         url: "/bigscreen/installationPlan",
         type: "get",
         response: () => {
+            const category = [
+                "首充礼包", "限时抽卡", "皮肤盲盒", "体力购买",
+                "战令进阶", "排行激励", "每日特惠", "限定池",
+                "成长基金", "累计签到", "随机掉落", "公会赞助"
+            ];
+            // 曝光量：均匀分布在 180~520 之间，避免极端值
+            const lineData = [420, 380, 460, 220, 340, 290, 510, 480, 195, 520, 350, 180];
+            // 转化率预设（各机制的真实转化逻辑）：首充最高65%，公会最低12%
+            const rates = [0.65, 0.52, 0.48, 0.38, 0.42, 0.35, 0.44, 0.58, 0.22, 0.28, 0.31, 0.12];
+            const barData = lineData.map((v, i) => Math.round(v * rates[i]));
+            const rateData = barData.map((val, i) => ((val / lineData[i]) * 100).toFixed(0));
 
-            let num = RandomNumBoth(26, 32);
-            const a = Mock.mock({
-                ["category|" + num]: ["@city()"],
-                ["barData|" + num]: ["@integer(10, 100)"],
-            })
-            let lineData = [], rateData = [];
-            for (let index = 0; index < num; index++) {
-                let lineNum = Mock.mock('@integer(0, 100)') + a.barData[index]
-                lineData.push(lineNum)
-                let rate = a.barData[index] / lineNum;
-                rateData.push((rate * 100).toFixed(0))
-            }
-            a.lineData = lineData
-            a.rateData = rateData
             return {
                 success: true,
-                data: a
+                data: { category, barData, lineData, rateData }
             }
         }
     },
+
+    // 中心地图--诱导机制受众地域辐射 (CenterMap)
     {
         url: "/bigscreen/centerMap",
         type: "get",
         response: (options: any) => {
-            let params = parameteUrl(options.url)
-            //不是中国的时候
-            if (params.regionCode && !["china"].includes(params.regionCode)) {
-                const a = Mock.mock({
-                    success: true,
-                    data: {
-                        "dataList|100": [
-                            {
-                                name: "@city()",
-                                value: '@integer(1, 1000)'
-                            }
-                        ],
-                        regionCode: params.regionCode,//-代表中国
-                    }
-                })
-                return a
+            let params = parameteUrl(options.url);
+            const regionCode = params.regionCode || 'china';
+
+            const PROVINCE_STATIC_DATA: any = {
+                "广东省": 1150, "上海市": 980, "北京市": 870, "浙江省": 820,
+                "江苏省": 750, "湖北省": 580, "四川省": 620, "陕西省": 290,
+                "福建省": 510, "湖南省": 460, "山东省": 410, "河南省": 380,
+                "重庆市": 450, "安徽省": 320, "江西省": 240, "辽宁省": 210,
+                "河北省": 190, "广西壮族自治区": 170, "云南省": 150, "海南省": 350,
+                "山西省": 120, "黑龙江省": 110, "吉林省": 95, "贵州省": 130,
+                "内蒙古自治区": 80, "甘肃省": 70, "新疆维吾尔自治区": 55,
+                "宁夏回族自治区": 45, "青海省": 35, "西藏自治区": 25,
+                "天津市": 380, "香港特别行政区": 1050, "澳门特别行政区": 890, "台湾省": 640
+            };
+
+            const PROVINCE_CITIES: any = {
+                "650000": [["乌鲁木齐市", 5], ["伊犁哈萨克自治州", 2], ["喀什地区", 2], ["阿克苏地区", 1], ["昌吉回族自治州", 1], ["巴音郭楞蒙古自治州", 1]],
+                "420000": [["武汉市", 6], ["宜昌市", 2], ["襄阳市", 2], ["荆州市", 1], ["黄冈市", 1], ["恩施土家族苗族自治州", 1]],
+                "210000": [["沈阳市", 5], ["大连市", 4], ["鞍山市", 2], ["抚顺市", 1], ["本溪市", 1], ["锦州市", 1]],
+                "440000": [["广州市", 5], ["深圳市", 5], ["东莞市", 3], ["佛山市", 3], ["珠海市", 2], ["中山市", 1], ["惠州市", 1]],
+                "150000": [["呼和浩特市", 5], ["包头市", 4], ["鄂尔多斯市", 3], ["赤峰市", 2], ["通辽市", 1]],
+                "230000": [["哈尔滨市", 6], ["齐齐哈尔市", 2], ["牡丹江市", 2], ["佳木斯市", 1], ["大庆市", 2]],
+                "410000": [["郑州市", 6], ["洛阳市", 3], ["南阳市", 2], ["开封市", 1], ["新乡市", 1], ["许昌市", 1]],
+                "370000": [["济南市", 5], ["青岛市", 5], ["烟台市", 2], ["潍坊市", 2], ["临沂市", 1], ["济宁市", 1]],
+                "610000": [["西安市", 7], ["宝鸡市", 2], ["咸阳市", 2], ["榆林市", 1], ["汉中市", 1]],
+                "520000": [["贵阳市", 6], ["遵义市", 3], ["六盘水市", 2], ["毕节市", 1], ["铜仁市", 1]],
+                "310000": [["黄浦区", 4], ["浦东新区", 5], ["静安区", 3], ["徐汇区", 3], ["长宁区", 2], ["宝山区", 1]],
+                "500000": [["渝中区", 4], ["江北区", 3], ["南岸区", 3], ["九龙坡区", 3], ["渝北区", 3], ["万州区", 1]],
+                "540000": [["拉萨市", 7], ["日喀则市", 2], ["昌都市", 2], ["林芝市", 1], ["山南市", 1]],
+                "340000": [["合肥市", 6], ["芜湖市", 3], ["马鞍山市", 2], ["安庆市", 2], ["滁州市", 1]],
+                "350000": [["福州市", 5], ["厦门市", 5], ["泉州市", 3], ["漳州市", 2], ["莆田市", 1]],
+                "430000": [["长沙市", 6], ["株洲市", 2], ["湘潭市", 2], ["岳阳市", 2], ["常德市", 1], ["衡阳市", 1]],
+                "460000": [["海口市", 6], ["三亚市", 5], ["儋州市", 2], ["琼海市", 1], ["文昌市", 1]],
+                "320000": [["南京市", 5], ["苏州市", 5], ["无锡市", 3], ["南通市", 2], ["常州市", 2], ["扬州市", 1]],
+                "630000": [["西宁市", 7], ["海东市", 3], ["海西蒙古族藏族自治州", 2], ["黄南藏族自治州", 1]],
+                "450000": [["南宁市", 6], ["柳州市", 3], ["桂林市", 3], ["玉林市", 1], ["梧州市", 1]],
+                "640000": [["银川市", 6], ["石嘴山市", 3], ["吴忠市", 2], ["固原市", 1], ["中卫市", 1]],
+                "330000": [["杭州市", 5], ["宁波市", 4], ["温州市", 3], ["绍兴市", 2], ["嘉兴市", 2], ["台州市", 1]],
+                "130000": [["石家庄市", 5], ["唐山市", 4], ["保定市", 3], ["沧州市", 2], ["邯郸市", 2], ["秦皇岛市", 1]],
+                "810000": [["中西区", 4], ["湾仔区", 3], ["九龙城区", 3], ["观塘区", 3], ["沙田区", 2], ["元朗区", 1]],
+                "710000": [["台北市", 5], ["新北市", 4], ["高雄市", 4], ["台中市", 3], ["台南市", 2], ["桃园市", 2]],
+                "820000": [["澳门半岛", 6], ["氹仔岛", 3], ["路环岛", 2]],
+                "620000": [["兰州市", 6], ["天水市", 2], ["白银市", 2], ["酒泉市", 2], ["张掖市", 1]],
+                "510000": [["成都市", 7], ["绵阳市", 2], ["德阳市", 2], ["宜宾市", 1], ["南充市", 1], ["达州市", 1]],
+                "120000": [["和平区", 4], ["河西区", 4], ["南开区", 3], ["滨海新区", 4], ["武清区", 2], ["宝坻区", 1]],
+                "360000": [["南昌市", 6], ["赣州市", 3], ["上饶市", 2], ["吉安市", 2], ["宜春市", 1]],
+                "530000": [["昆明市", 6], ["曲靖市", 3], ["大理白族自治州", 2], ["红河哈尼族彝族自治州", 2], ["楚雄彝族自治州", 1]],
+                "140000": [["太原市", 6], ["大同市", 3], ["长治市", 2], ["临汾市", 2], ["运城市", 1]],
+                "110000": [["东城区", 4], ["西城区", 4], ["朝阳区", 5], ["海淀区", 5], ["丰台区", 3], ["昌平区", 2]],
+                "220000": [["长春市", 6], ["吉林市", 3], ["四平市", 2], ["延边朝鲜族自治州", 2], ["通化市", 1]],
+            };
+
+            let resultDataList: any[] = [];
+
+            if (regionCode === 'china') {
+                resultDataList = Object.keys(PROVINCE_STATIC_DATA).map(name => ({
+                    name,
+                    value: PROVINCE_STATIC_DATA[name]
+                }));
             } else {
-                const a = Mock.mock({
-                    success: true,
-                    data: {
-                        "dataList|12": [
-                            {
-                                name: "@province()",
-                                value: '@integer(1, 1100)'
-                            }
-                        ],
-                        regionCode: 'china',
-                    }
-                })
-                // 去重
-                a.data.dataList = ArrSet(a.data.dataList, "name")
-                return a
+                const adcodeToName: any = {
+                    "650000": "新疆维吾尔自治区", "420000": "湖北省", "210000": "辽宁省",
+                    "440000": "广东省", "150000": "内蒙古自治区", "230000": "黑龙江省",
+                    "410000": "河南省", "370000": "山东省", "610000": "陕西省",
+                    "520000": "贵州省", "310000": "上海市", "500000": "重庆市",
+                    "540000": "西藏自治区", "340000": "安徽省", "350000": "福建省",
+                    "430000": "湖南省", "460000": "海南省", "320000": "江苏省",
+                    "630000": "青海省", "450000": "广西壮族自治区", "640000": "宁夏回族自治区",
+                    "330000": "浙江省", "130000": "河北省", "810000": "香港特别行政区",
+                    "710000": "台湾省", "820000": "澳门特别行政区", "620000": "甘肃省",
+                    "510000": "四川省", "120000": "天津市", "360000": "江西省",
+                    "530000": "云南省", "140000": "山西省", "110000": "北京市",
+                    "220000": "吉林省",
+                };
+
+                const provinceName = adcodeToName[regionCode] || "";
+                const totalValue = PROVINCE_STATIC_DATA[provinceName] || 500;
+                const cities = PROVINCE_CITIES[regionCode];
+
+                if (cities) {
+                    const totalWeight = cities.reduce((sum: number, c: any) => sum + c[1], 0);
+                    let remaining = totalValue;
+
+                    cities.forEach((city: any, idx: number) => {
+                        let val: number;
+                        if (idx === cities.length - 1) {
+                            val = Math.max(1, remaining);
+                        } else {
+                            const base = Math.round((city[1] / totalWeight) * totalValue);
+                            const jitter = Math.round(base * (0.85 + Math.random() * 0.3));
+                            val = Math.min(jitter, remaining - (cities.length - 1 - idx));
+                            val = Math.max(1, val);
+                            remaining -= val;
+                        }
+                        resultDataList.push({ name: city[0], value: val });
+                    });
+
+                    resultDataList.sort((a: any, b: any) => b.value - a.value);
+                } else {
+                    resultDataList.push({ name: "市辖区", value: totalValue });
+                }
             }
+
+            return {
+                success: true,
+                msg: "区域审计数据获取成功",
+                data: {
+                    dataList: resultDataList,
+                    regionCode: regionCode,
+                }
+            };
         }
     }
 ];
-

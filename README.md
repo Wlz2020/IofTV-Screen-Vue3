@@ -1,313 +1,132 @@
+# 数字陷阱
+## 游戏成瘾与诱导性设计的审计可视化看板
 
-## 项目描述
+**Henry** · 个人研究 & 交互数据可视化项目
 
-[IofTV-Screen](https://gitee.com/daidaibg/IofTV-Screen/tree/main)  的 Vue3+vite版本，
+---
 
-### 与vue2版本对比
+## 01 · 项目背景
 
-#### 功能
+我自己玩游戏，我身边的同学也玩。我开始注意到一个规律：每当一个朋友在游戏中情绪低落的瞬间，一个"恰好"出现的弹窗就会跳出来——折扣礼包、限时倒计时、闪烁的概率转盘。
 
-功能采用与vue2版本相同功能
+这不是巧合，而是系统。一套被精心设计用来在青少年心理最脆弱的时刻实施干预的机制。
 
-因为要与vue2版本相同功能，有些组件不兼容vue3版本，例如：胶囊柱图，数字滚动皆重新封装为组件，整体来说，功能属实相同。根据自己需求选择[vue2](#vue2版本地址)版本与[vue3](#本项目地址 vue3+vite)版本
+本项目从对身边同龄人的直接观察出发，结合中国移动游戏市场的青少年消费行为数据，构建了一个包含 **8 个核心监测维度**的实时审计看板，旨在将隐蔽的"暗黑模式"（Dark Patterns）可视化，使其可被阅读、可被质疑、可被讨论。
 
-#### 样式
+---
 
-进行微调，整体看着更加美观
+## 02 · 项目信息
 
+| | |
+|---|---|
+| **项目类型** | 个人研究 & 交互式数据可视化 |
+| **技术栈** | Vue 3 · TypeScript · ECharts · Mock.js · SCSS |
+| **工作范围** | 前端全栈——数据建模、图表设计、交互逻辑 |
+| **角色** | 独立研究者、设计者、开发者 |
 
+---
 
-- 项目需要全屏展示（按 F11）。
+## 03 · 看板架构：8 大审计模块
 
-- 项目部分区域使用了全局注册方式，增加了打包体积，在实际运用中请使用 **按需引入**。
+整个看板分为三个空间层次：**用户画像（左）**、**地理分析（中）**、**行为关联（右）**。
 
-- 项目环境：Vite、Echarts、Npm、Node，axios,mock,vue3。
+---
 
-- 请拉取 master 分支的代码，其余分支是开发分支。
+### 左侧——谁在被瞄准
 
-- 在项目public目录下存放地图数据合集，根据地市编存放。
+**模块 1 · 游戏成瘾干预样本监测**
 
+对 1,420 份调研样本进行三态追踪：正常娱乐（49%）、退款申诉（13%）、成瘾预警（38%）。三类数据严格互斥且总量守恒，避免数字粉饰。
 
-友情链接：
+> 设计立场：用真实的比例告诉观看者——超过三分之一的样本已经触发预警阈值，这不是极端情况，而是普遍现象。
 
-1. [Vue 官方文档](https://cn.vuejs.org/)
-3. [echarts 实例](https://gitee.com/link?target=https%3A%2F%2Fecharts.apache.org%2Fexamples%2Fzh%2Findex.html)，[echarts API 文档](https://gitee.com/link?target=https%3A%2F%2Fecharts.apache.org%2Fzh%2Fapi.html%23echarts)
-4. [mock.js官网](http://mockjs.com/examples.html)
-5. [axios官网](https://axios-http.com/)
+---
 
-**项目展示** 
+**模块 2 · 成瘾性消费阶层画像**
 
-![项目展示](https://www.gaobug.com/bigscreen/a-img/home.png)
+将 698 名有氪金行为的用户按消费强度分为四层：零氪（45%）、微氪（32%）、深度进阶（18%）、极端重氪（5%）。符合真实的"二八定律"——少数重度用户贡献了绝大多数平台收入。
 
-### 项目预览地址
+> 设计立场：数据结构本身就是论点。头部 5% 的极端氪金者是平台重点"维护"的对象，也是成瘾机制最深度的受害者。
 
-[https://www.gaobug.com/bigscreen-vue3](https://www.gaobug.com/bigscreen-vue3)
+---
 
-### 项目仓库地址
+**模块 3 · 高危诱导实时监测**
 
-#### 本项目地址 vue3+vite
+滚动呈现实时风险事件流，高危与正常状态比例约为 4:6，覆盖全国各省市节点。
 
-**github地址**
+> 设计立场：以"监控墙"的形式呈现，制造一种数字审计现场的紧张感。
 
-[https://github.com/daidaibg/IofTV-Screen-Vue3](https://github.com/daidaibg/IofTV-Screen-Vue3)
+---
 
-**Gitee地址**
+### 中部——在哪里发生
 
-[https://gitee.com/daidaibg/IofTV-Screen-Vue3](https://gitee.com/daidaibg/IofTV-Screen-Vue3)
+**模块 4 · 诱导机制受众地域辐射（交互地图）**
 
-#### vue2版本地址
+核心交互模块。支持从全国视图下钻至省级行政区，展示各地区的"受众受损指数"。省级数据来自静态预设，市级数据按权重算法动态分配（一线城市权重最高），总和严格等于省份数值。
 
-**github地址**
+技术实现要点：
+- ECharts `visualMap` 分段配置：全国与省级使用不同阈值档位，避免下钻后颜色失效
+- 自适应色阶：市级视图根据实际最大值动态计算 6 段区间，保证颜色分布始终有差异
+- GeoJSON 按需注册，首次加载后缓存，避免重复请求
 
-[https://github.com/daidaibg/IofTV-Screen](https://github.com/daidaibg/IofTV-Screen)
+> 设计立场：算法的地理渗透是不均匀的。经济越发达的地区，诱导机制的覆盖密度越高——这本身是一个值得追问的结构性问题。
 
-**Gitee地址**
+---
 
-[https://gitee.com/daidaibg/IofTV-Screen](https://gitee.com/daidaibg/IofTV-Screen)
+**模块 5 · 付费诱导机制曝光转化审计**
 
+对 12 种典型付费机制进行"曝光量 → 转化人数 → 转化率"三层分析。首充礼包转化率最高（65%），公会赞助最低（12%），数据来自基于真实漏斗逻辑的建模推算。
 
+> 设计立场：转化率是衡量一个机制"多有效"的冷酷指标。数字越高，说明这套心理操纵设计越精准。
 
-### 采用自适应组件方式，
+---
 
-###  滚动设置，自适应设置 
+### 右侧——如何运作
 
-项目中可以进行滚动配置，内容是否滚动
+**模块 6 · 非理性付费波动轨迹（双轴时序图）**
 
-点击右上角设置按钮
-![设置](https://www.gaobug.com/bigscreen/a-img/setting.png)
+以月份为横轴，同时展示"诱导行为触发频次"与"非理性氪金转化量"两条折线。波峰刻意设定在寒假（2月）和五一前（5月），转化率控制在 22%~28%，符合真实漏斗模型。
 
+> 设计立场：双峰与学生假期高度吻合。算法不是随机的，它知道你什么时候在家、什么时候情绪最闲散。
 
+---
 
-可以进行以下配置，可以自行代码中进行修改或增加配置
+**模块 7 · 暗黑模式强度排行**
 
+对 8 种诱导设计类型按影响力评分排行。概率开箱（982）位居第一，体力锁定（289）垫底。分值之间保持合理梯度，反映各机制的赌博属性强弱差异。
 
+> 设计立场：这是一份"暗黑设计能力榜"。排名越高的机制，其赌博本质越显性、对青少年的认知损耗越大。
 
-![在这里插入图片描述](https://www.gaobug.com/bigscreen/a-img/setting2.png)
+---
 
+**模块 8 · 高频成瘾行为实时审计**
 
+审计记录滚动呈现，涵盖绕过防沉迷认证、凌晨高额交易、报复性氪金等具体行为标签。风险指数从 60 到 960 呈右偏分布——低风险样本占多数，高风险是真正需要被干预的少数。
 
-##  2、主要文件介绍
+> 设计立场：每一条滚动的记录背后，都是一个真实发生过的行为模式。数据流的形式让"个体"变得可见。
 
-| 文件              | 作用/功能                                                    |
-| ----------------- | ------------------------------------------------------------ |
-| main.js           | 主目录文件，引入 Echart/DataV 等文件                         |
-| utils             | 工具函数与 mixins 函数等                                     |
-| views/ home.vue   | 项目主结构                                                   |
-| views/其余文件    | 界面各个区域组件（按照位置来命名）                           |
-| assets            | 静态资源目录，放置 logo 与背景图片                           |
-| assets / css/     | 通用 CSS 文件，全局项目快捷样式调节                          |
-| components/echart | 所有 echart 图表（按照位置来命名）                           |
-| common/...        | 全局封装的 ECharts 和 flexible 插件代码（适配屏幕尺寸，可定制化修改） |
-| api/api.js        | 接口封装文件                                                 |
-| mock              | 模拟数据接口地址                                             |
+---
 
-###  
+## 04 · 技术与设计决策
 
-## 使用介绍
+**为什么选择深色 + 警示色的视觉语言**
 
-### 安装
+我没有使用通用数据大屏常见的蓝绿科技感配色，而是选择了近黑的深海军蓝配合警示红。这个选择是有意识的立场表达——这不是一个展示成就的仪表盘，而是一个审计现场。颜色本身应该传递"这里有问题需要被正视"的信号。
 
-```npm
-npm install   
-```
-### 启动
+**数据合理性优先于视觉冲击**
 
-```npm
-npm run dev
-```
+所有模块的数值都经过逻辑自洽的检验：各分类之和等于总量、转化率符合真实漏斗比例、时序波峰与现实场景对应。虚假或失真的数据会让整个论点失去说服力。
 
-### 取消mock模拟数据
+**交互即论点**
 
-```javascript
-// src\main.ts文件
-把下面两行代码注释掉就可以了。
-import { mockXHR } from "@/mock/index";
-mockXHR()
-```
+地图的下钻功能不只是技术展示，它模拟了监管视角的"穿透式审计"——从宏观到微观，从省到市，每一层都有数据在等待。这种层级本身就在说：问题是有结构的，不是随机的。
 
-## 
+---
 
-## 公用组件
+## 05 · 个人陈述
 
-封装了除面条外个别用到的组件
+这个项目让我意识到，数据可视化可以是一种立场，而不只是一种呈现方式。
 
-### 自适应缩放组件
+在开发过程中，我反复面对一个问题：如何在保持数据客观的同时，让观看者感受到这些数字背后的真实重量？我的答案是：通过设计的每一个细节——颜色选择、分类逻辑、交互层级、数值分布——去传递一个清晰的观点：**这些机制是被设计出来的，它们不是游戏的副产品，而是游戏本身的核心商业逻辑。**
 
-#### 注意
-
-采用Scale方式，会自动给组件父元素添加overflow:hidden 
-
-#### 使用
-
-```vue
-<template>
-  <scale-screen width="1920" height="1080">
-    <div>
-   			content
-    </div>
-  </scale-screen>
-</template>
-
-<script>
-import ScaleScreen from 'scale-screen'
-
-export default {
-  name:'Demo',
-  components:{
-    VScaleScreen
-  }
-}
-</script>
-```
-
-#### API
-
-| 属性         | 说明                                                         | 类型                             | 默认值 |
-| ------------ | ------------------------------------------------------------ | -------------------------------- | ------ |
-| selfAdaption | 是否进行自适应                                               | Boolean                          | true   |
-| width        | 大屏宽度                                                     | `Number` or `String`             | 1920   |
-| height       | 大屏高度                                                     | `Number` or `String`             | 1080   |
-| autoScale    | 自适应配置，配置为boolean类型时，为启动或者关闭自适应，配置为对象时，若x为true，x轴产生边距，y为true时，y轴产生边距，启用fullScreen时此配置失效 | Boolean or {x:boolean,y:boolean} | true   |
-| delay        | 窗口变化防抖延迟时间                                         | Number                           | 500    |
-| fullScreen   | 全屏自适应，启用此配置项时会存在拉伸效果，同时autoScale失效，非必要情况下不建议开启 | Boolean                          | false  |
-| boxStyle     | 修改容器样式，如居中展示时侧边背景色，符合Vue双向绑定style标准格式 | Object                           | null   |
-| wrapperStyle | 修改自适应区域样式，符合Vue双向绑定style标准格式             | Object                           | null   |
-
-
-###  外边框
-
-因为我的项目外边框几乎一样，还有title,所以封装了此组件。
-
-根据自己需求更改，更换外边框（src\components\item-wrap\item-wrap.vue）下更换。
-
-```vue
-<ItemWrap
-    title="我是title"
-    >
-       <div>我是谁？</div>
-</ItemWrap>
-```
-
-| 参数  | 描述 | 默认值 |  类型  | 可选值 |
-| :---: | :--: | :----: | :----: | :----: |
-| title | 标头 |   -    | string |   -    |
-
-### CountUp 数字滚动
-
-以下属性同 coutup.js 配置项（same as countup.js properties）
-
-#### Props
-
-| Name     | Type             | Default | Description                                                  |
-| -------- | ---------------- | ------- | ------------------------------------------------------------ |
-| endVal   | Number \| String | -       | 结束值                                                       |
-| startVal | Number \| String | 0       | 起始值                                                       |
-| duration | Number           | 2.5     | 动画时长，单位：秒                                           |
-| options  | Object           | -       | [countUp.js](https://github.com/inorganik/countUp.js) options 配置项 |
-
-以下为组件特有属性（extension properties）
-
-| Name     | Type              | Default | Description                   |
-| -------- | ----------------- | ------- | ----------------------------- |
-| autoplay | Boolean           | true    | 是否自动计数                  |
-| loop     | Boolean \| Number | false   | 循环次数，有限次数 / 无限循环 |
-| delay    | Number            | 0       | loop 循环的间隔时间，单位：秒 |
-
-#### 插槽（slots）
-
-| Name   | Description |
-| ------ | ----------- |
-| prefix | 前缀        |
-| suffix | 后缀        |
-
-#### 事件（Events）
-
-| Name      | Description                | return       |
-| --------- | -------------------------- | ------------ |
-| @init     | CountUp 实例初始化完成触发 | CountUp 实例 |
-| @finished | 计数结束时触发             | -            |
-
-#### countup.js 配置项说明
-```ts
-interface CountUpOptions {
-  startVal?: number // number to start at (0) 开始数值，默认 0
-  decimalPlaces?: number // number of decimal places (0) 小数点 位数
-  duration?: number // animation duration in seconds (2) 动画时长
-  useGrouping?: boolean // example: 1,000 vs 1000 (true) 是否使用千分位
-  useEasing?: boolean // ease animation (true) 是否开启动画过渡，默认动画函数为easeOutExpo 
-  smartEasingThreshold?: number // smooth easing for large numbers above this if useEasing (999)
-  smartEasingAmount?: number // amount to be eased for numbers above threshold (333)
-  separator?: string // grouping separator (',') 千分位分隔符
-  decimal?: string // decimal ('.') 小数点分隔符
-  // easingFn: easing function for animation (easeOutExpo) 动画函数
-  easingFn?: (t: number, b: number, c: number, d: number) => number
-  formattingFn?: (n: number) => string // this function formats result 格式化结果
-  prefix?: string // text prepended to result 数值前缀
-  suffix?: string // text appended to result 数值后缀
-  numerals?: string[] // numeral glyph substitution 数字符号替换 0 - 9，例如替换为 [a,b,c,d,e,f,g,h,i,j]
-  enableScrollSpy?: boolean // start animation when target is in view 在可视范围内才开始动画
-  scrollSpyDelay?: number // delay (ms) after target comes into view  目标进入可视范围内后的延迟时间(毫秒)
-}
-```
-
-###  胶囊柱图
-
-#### Props
-
-|  属性  |   说明   |      类型       |          可选值           | 默认值  |
-| :----: | :------: | :-------------: | :-----------------------: | :-----: |
-|  data  |  柱数据  | `Array<Object>` |   [data属性](#data属性)   |  `[]`   |
-| config | 基础配置 |     Object      | [config属性](#config属性) | `false` |
-
-#### config属性
-
-|   属性    |   说明   |      类型       | 可选值 | 默认值  |
-| :-------: | :------: | :-------------: | :----: | :-----: |
-|   unit    |   单位   |    `String`     |  ---   |  `''`   |
-|  colors   |  环颜色  | `Array<String>` |  [1]   |   [2]   |
-| showValue | 显示数值 |    `Boolean`    |  ---   | `false` |
-
-#### 注释config注释
-
-[1] 颜色支持`hex|rgb|rgba|颜色关键字`等四种类型。
-
-[2] 默认配色为`['#37a2da', '#32c5e9', '#67e0e3', '#9fe6b8', '#ffdb5c', '#ff9f7f', '#fb7293']`。
-
-#### data属性
-
-| 属性  |   说明   |   类型   | 可选值 | 默认值 |
-| :---: | :------: | :------: | :----: | :----: |
-| name  |  柱名称  | `String` |  ---   |  ---   |
-| value | 柱对应值 | `Number` |  ---   |  ---   |
-
-### 无缝轮播组件
-
-看此文档 优化次源码
-
-[https://doc.wssio.com/opensource/vue3-seamless-scroll/](https://doc.wssio.com/opensource/vue3-seamless-scroll/)
-
-## 中间地图
-
-### 南海显隐控制
-
- 根据需求来，**修改此值请刷新页面**
-
-```indexs/center-map.vue``` 文件中```isSouthChinaSea```变量 默认不显示南海(false),为```true```的时候显示南海
-
-```
-isSouthChinaSea:false,//默认不显示南海，改为true可显示南海
-```
-
-
-##  大屏交流反馈（面条的群）
-
-### 大屏QQ群
-
-QQ群号：
-
-一群：713105837 （已满）
-
-二群：495755841
-
-
-
+我不认为游戏是坏的。但我认为，当一套系统开始利用青少年的心理弱点来最大化商业收益时，它就需要被看见、被命名、被讨论。

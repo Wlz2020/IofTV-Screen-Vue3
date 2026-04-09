@@ -15,7 +15,7 @@ const { setSettingShow} =useSettingStore()
 const weekday= ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
 const timeFn = () => {
   dateData.timing = setInterval(() => {
-    dateData.dateDay = dayjs().format("YYYY-MM-DD hh : mm : ss");
+    dateData.dateDay = dayjs().format("YYYY-MM-DD HH:mm:ss");
     dateData.dateWeek = weekday[dayjs().day()];
   }, 1000);
 };
@@ -29,15 +29,15 @@ timeFn()
     <div class="guang"></div>
     <div class="d-flex jc-center">
       <div class="title">
-        <span class="title-text">互联网设备可视化平台</span>
+        <span class="title-text">网络诱导机制伦理审计平台</span>
       </div>
     </div>
     <div class="timers">
       {{ dateData.dateYear }} {{ dateData.dateWeek }} {{ dateData.dateDay }}
 
-      <div class="setting_icon"   @click="setSettingShow(true)">
+      <!-- <div class="setting_icon"   @click="setSettingShow(true)">
           <img src="@/assets/img/headers/setting.png" alt="设置">
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

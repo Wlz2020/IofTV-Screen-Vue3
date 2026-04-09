@@ -46,20 +46,29 @@ const mergeConfig = () => {
 const calcCapsuleLengthAndLabelData = () => {
     if (!props.data.length) return;
     const newcapsuleValue = props.data.map((item: any) => item.value);
-    const maxValue = Math.max(...newcapsuleValue);
+    
+    // --- 修改核心逻辑 ---
+    // 1. 获取数据的原始最大值
+    const rawMax = Math.max(...newcapsuleValue);
+    
+    // 2. 将最大值向上取整到最近的“整百”或“整十”
+    // 比如 925 会变成 1000；430 会变成 500
+    // 这样 1000 / 5 = 200，刻度就会非常整齐
+    const maxValue = Math.ceil(rawMax / 100) * 100 || 100; 
+
     capsuleValue.value = newcapsuleValue;
+    
+    // 3. 计算比例时，使用这个“逻辑最大值”
     capsuleLength.value = newcapsuleValue.map((v: any) =>
         maxValue ? v / maxValue : 0
     );
+
+    // 4. 计算刻度线文字
     const oneFifth = maxValue / 5;
     const newlabelData = Array.from(
         new Set(new Array(6).fill(0).map((v, i) => Math.ceil(i * oneFifth)))
     );
     labelData.value = newlabelData;
-    // labelDataLength.value = Array.from(newlabelData).map((v) =>
-    //     maxValue ? v / maxValue : 0
-    // );
-    // console.log(labelDataLength.value);
 };
 watch(
     () => props.data,
